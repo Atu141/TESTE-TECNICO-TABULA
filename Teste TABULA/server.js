@@ -1,70 +1,61 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
 const app = express();
 const PORT = 3000;
+const tasksFilePath = path.join(__dirname, 'tarefas.json');
 
-// Caminho completo para o arquivo tarefas.json (usando path para evitar problemas de caminho)
-// Problemas com o caminho usnado o path
-// const FILE_PATH = path.join(__dirname, 'tarefas.json');
+// Middleware para processar JSON
+app.use(express.json());
 
-const FILE_PATH = './tarefas.json';
+// Função auxiliar para ler as tarefas do arquivo JSON
+const readTasksFromFile = () => {
+    const data = fs.readFileSync(tasksFilePath, 'utf-8');
+    return JSON.parse(data);
+};
 
+// Função auxiliar para escrever as tarefas no arquivo JSON
+const writeTasksToFile = (tasks) => {
+    fs.writeFileSync(tasksFilePath, JSON.stringify(tasks, null, 2), 'utf-8');
+};
 
-// Middleware para parsear o corpo da requisição como JSON
-app.use(bodyParser.json());
-app.use(express.static('public')); // Servir arquivos estáticos (HTML, CSS, JS)
-
-// Função para carregar tarefas do arquivo JSON
-function loadTasks() {
-  try {
-    if (fs.existsSync(FILE_PATH)) { // Verificar se o arquivo existe
-      const data = fs.readFileSync(FILE_PATH, 'utf8');
-      return JSON.parse(data);
-    } else {
-      return []; // Retornar array vazio se o arquivo não existir
-    }
-  } catch (err) {
-    console.error('Erro ao carregar tarefas:', err);
-    return [];
-  }
-}
-
-// Função para salvar tarefas no arquivo JSON
-function saveTasks(tasks) {
-  try {
-    // Verifica se tasks é um array antes de tentar salvar
-    if (Array.isArray(tasks)) {
-      fs.writeFileSync(FILE_PATH, JSON.stringify(tasks, null, 2), 'utf8');
-    } else {
-      console.error('Formato de tarefas inválido. Deve ser um array.');
-    }
-  } catch (err) {
-    console.error('Erro ao salvar tarefas:', err);
-  }
-}
-
-// Rota para obter tarefas
+// Rota para obter todas as tarefas
 app.get('/tasks', (req, res) => {
-  const tasks = loadTasks();
-  res.json(tasks);
+    const tasks = readTasksFromFile();
+    res.json(tasks);
 });
 
-// Rota para salvar as tarefas
+// Rota para adicionar uma nova tarefa
 app.post('/tasks', (req, res) => {
-  const tasks = req.body;
+    const newTask = req.body[0];  // Pegando a primeira tarefa do array (formato esperado)
+    const tasks = readTasksFromFile();
 
-  // Verifica se o body contém um array válido
-  if (Array.isArray(tasks)) {
-    saveTasks(tasks); // Salvar no arquivo tarefas.json
-    res.sendStatus(200);
-  } else {
-    res.status(400).send('Dados inválidos. Esperado um array de tarefas.');
-  }
+    newTask.id = tasks.length ? tasks[tasks.length - 1].id + 1 : 1;  // Geração de ID
+    tasks.push(newTask);
+    
+    writeTasksToFile(tasks);
+    res.status(201).json({ message: 'Tarefa adicionada com sucesso!' });
 });
 
-// Iniciar o servidor
+// Rota para editar uma tarefa existente
+app.put('/tasks/:id', (req, res) => {
+    const taskId = parseInt(req.params.id, 10);
+    const updatedTask = req.body;  // Tarefa atualizada vinda do front-end
+    const tasks = readTasksFromFile();
+
+    const taskIndex = tasks.findIndex(task => task.id === taskId);
+    if (taskIndex !== -1) {
+        tasks[taskIndex] = { ...tasks[taskIndex], ...updatedTask };  // Atualizando a tarefa
+        writeTasksToFile(tasks);
+        res.json({ message: 'Tarefa atualizada com sucesso!' });
+    } else {
+        res.status(404).json({ message: 'Tarefa não encontrada' });
+    }
+});
+
+// Servir arquivos estáticos (HTML, JS, CSS)
+app.use(express.static('public'));
+
 app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`Servidor rodando na porta ${PORT}`);
 });

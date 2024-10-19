@@ -1,16 +1,12 @@
-* {
-    margin: 0;
-    padding: 20px;
-}
-
-.completed {
-    text-decoration: line-through;
-}
-
 body {
-    background-image: url('img/tabula-icon.png');
-    background-size: cover;
-    background-repeat: no-repeat;
+    background-color: #f7f7f7;
 }
 
-  
+table th, table td {
+    vertical-align: middle;
+}
+
+.modal-header {
+    background-color: #007bff;
+    color: white;
+}

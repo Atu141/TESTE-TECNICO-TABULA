@@ -1,88 +1,107 @@
-document.addEventListener('DOMContentLoaded', function () {
-  // Verificar se o formulário existe antes de adicionar o event listener
-  const form = document.querySelector('#addTaskForm');
-  if (form) {
-      form.addEventListener('submit', function (event) {
-          event.preventDefault();  // Impede o comportamento padrão do form
-
-          // Selecionar os campos do formulário
-          const nomeInput = document.querySelector('#nome');
-          const descricaoInput = document.querySelector('#descricao');
-          const dataInput = document.querySelector('#data');
-
-          // Verificar se os campos existem
-          if (!nomeInput || !dataInput) {
-              console.error('Campo "nome" ou "data" não encontrado no formulário');
-              return;
-          }
-
-          // Criar o objeto da nova tarefa
-          const newTask = {
-              title: nomeInput.value,
-              description: descricaoInput ? descricaoInput.value : '',  // Descrição opcional
-              date: dataInput.value,
-              completed: false  // Tarefa começa como não concluída
-          };
-
-          // Enviar nova tarefa para o servidor via POST
-          fetch('/tasks', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json'
-              },
-              body: JSON.stringify([newTask])  // O backend espera um array de tarefas
-          })
-          .then(response => {
-              if (response.ok) {
-                  alert('Tarefa adicionada com sucesso!');
-                  // Limpar o formulário e atualizar a lista de tarefas
-                  form.reset();
-                  fetchTasks();  // Função para buscar e renderizar as tarefas atualizadas
-              } else {
-                  alert('Erro ao adicionar tarefa');
-              }
-          })
-          .catch(error => {
-              console.error('Erro ao salvar tarefa:', error);
-          });
+document.addEventListener('DOMContentLoaded', () => {
+    fetchTasks(); // Carrega as tarefas quando a página é carregada
+  
+    // Adicionar tarefa
+    document.querySelector('#addTaskForm').addEventListener('submit', function(event) {
+      event.preventDefault();  // Impede o comportamento padrão do form
+  
+      const newTask = {
+        title: document.querySelector('#nome').value,
+        description: document.querySelector('#descricao').value,
+        date: document.querySelector('#data').value,
+        completed: false  // Tarefa começa como não concluída
+      };
+  
+      // Enviar nova tarefa para o servidor
+      fetch('/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newTask) 
+      })
+      .then(response => {
+        if (response.ok) {
+          alert('Tarefa adicionada com sucesso!');
+          fetchTasks();
+        } else {
+          alert('Erro ao adicionar tarefa');
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao salvar tarefa:', error);
       });
-  } else {
-      console.error('Formulário não encontrado na página');
-  }
-
-  // Função para buscar e renderizar as tarefas
+    });
+  });
+  
+  // Função para buscar tarefas
   function fetchTasks() {
-      fetch('/tasks')
-          .then(response => response.json())
-          .then(tasks => {
-              renderTasks(tasks);
-          })
-          .catch(error => {
-              console.error('Erro ao carregar tarefas:', error);
-          });
+    fetch('/tasks')
+      .then(response => response.json())
+      .then(tasks => renderTasks(tasks))
+      .catch(error => console.error('Erro ao buscar tarefas:', error));
   }
-
-  // Função para renderizar as tarefas na tabela
+  
+  // Função para renderizar as tarefas
   function renderTasks(tasks) {
-      const taskList = document.querySelector('#taskList');
-      taskList.innerHTML = ''; // Limpar lista antes de renderizar
-
-      tasks.forEach((task, index) => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-              <td>${index + 1}</td>
-              <td>${task.title}</td>
-              <td>${task.description || ''}</td>
-              <td>${task.date}</td>
-              <td>
-                  <button class="btn btn-success">Concluir</button>
-                  <button class="btn btn-danger">Excluir</button>
-              </td>
-          `;
-          taskList.appendChild(row);
-      });
+    const taskList = document.querySelector('#taskList');
+    taskList.innerHTML = '';
+  
+    tasks.forEach((task, index) => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${task.title}</td>
+        <td>${task.description || ''}</td>
+        <td>${task.date}</td>
+        <td>
+          <button class="btn btn-success complete-btn" onclick="completeTask(${task.id})">Concluir</button>
+          <button class="btn btn-warning" onclick="editTask(${task.id})">Editar</button>
+          <button class="btn btn-danger" onclick="deleteTask(${task.id})">Excluir</button>
+        </td>
+      `;
+      taskList.appendChild(row);
+    });
   }
-
-  // Inicializar a lista de tarefas ao carregar a página
-  fetchTasks();
-});
+  
+  // Função para deletar tarefa
+  function deleteTask(id) {
+    if (confirm('Tem certeza que deseja excluir esta tarefa?')) {
+      fetch(`/tasks/${id}`, {
+        method: 'DELETE'
+      })
+      .then(response => {
+        if (response.ok) {
+          alert('Tarefa excluída com sucesso!');
+          fetchTasks();
+        } else {
+          alert('Erro ao excluir tarefa');
+        }
+      })
+      .catch(error => console.error('Erro ao excluir tarefa:', error));
+    }
+  }
+  
+  // Função para editar tarefa
+  function editTask(id) {
+    const newTitle = prompt('Novo título:');
+    const newDescription = prompt('Nova descrição:');
+  
+    fetch(`/tasks/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ title: newTitle, description: newDescription })
+    })
+    .then(response => {
+      if (response.ok) {
+        alert('Tarefa editada com sucesso!');
+        fetchTasks();
+      } else {
+        alert('Erro ao editar tarefa');
+      }
+    })
+    .catch(error => console.error('Erro ao editar tarefa:', error));
+  }
+  
