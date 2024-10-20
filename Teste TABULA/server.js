@@ -5,57 +5,56 @@ const app = express();
 const PORT = 3000;
 const tasksFilePath = path.join(__dirname, 'tarefas.json');
 
-// Middleware para processar JSON
+app.use(express.static('public'));
 app.use(express.json());
 
-// Função auxiliar para ler as tarefas do arquivo JSON
-const readTasksFromFile = () => {
-    const data = fs.readFileSync(tasksFilePath, 'utf-8');
-    return JSON.parse(data);
+// Função para ler tarefas do arquivo JSON
+const readTasks = () => {
+  const data = fs.readFileSync(tasksFilePath, 'utf-8');
+  return JSON.parse(data);
 };
 
-// Função auxiliar para escrever as tarefas no arquivo JSON
-const writeTasksToFile = (tasks) => {
-    fs.writeFileSync(tasksFilePath, JSON.stringify(tasks, null, 2), 'utf-8');
+// Função para escrever tarefas no arquivo JSON
+const writeTasks = (tasks) => {
+  fs.writeFileSync(tasksFilePath, JSON.stringify(tasks, null, 2));
 };
 
-// Rota para obter todas as tarefas
+// Listar todas as tarefas
 app.get('/tasks', (req, res) => {
-    const tasks = readTasksFromFile();
-    res.json(tasks);
+  const tasks = readTasks();
+  res.json(tasks);
 });
 
-// Rota para adicionar uma nova tarefa
+// Adicionar nova tarefa
 app.post('/tasks', (req, res) => {
-    const newTask = req.body[0];  // Pegando a primeira tarefa do array (formato esperado)
-    const tasks = readTasksFromFile();
-
-    newTask.id = tasks.length ? tasks[tasks.length - 1].id + 1 : 1;  // Geração de ID
-    tasks.push(newTask);
-    
-    writeTasksToFile(tasks);
-    res.status(201).json({ message: 'Tarefa adicionada com sucesso!' });
+  const tasks = readTasks();
+  const newTask = { id: Date.now(), ...req.body[0] };
+  tasks.push(newTask);
+  writeTasks(tasks);
+  res.status(201).json(newTask);
 });
 
-// Rota para editar uma tarefa existente
+// Editar tarefa existente
 app.put('/tasks/:id', (req, res) => {
-    const taskId = parseInt(req.params.id, 10);
-    const updatedTask = req.body;  // Tarefa atualizada vinda do front-end
-    const tasks = readTasksFromFile();
-
-    const taskIndex = tasks.findIndex(task => task.id === taskId);
-    if (taskIndex !== -1) {
-        tasks[taskIndex] = { ...tasks[taskIndex], ...updatedTask };  // Atualizando a tarefa
-        writeTasksToFile(tasks);
-        res.json({ message: 'Tarefa atualizada com sucesso!' });
-    } else {
-        res.status(404).json({ message: 'Tarefa não encontrada' });
-    }
+  const tasks = readTasks();
+  const taskIndex = tasks.findIndex(task => task.id == req.params.id);
+  if (taskIndex !== -1) {
+    tasks[taskIndex] = { ...tasks[taskIndex], ...req.body };
+    writeTasks(tasks);
+    res.json(tasks[taskIndex]);
+  } else {
+    res.status(404).json({ message: 'Tarefa não encontrada' });
+  }
 });
 
-// Servir arquivos estáticos (HTML, JS, CSS)
-app.use(express.static('public'));
+// Deletar tarefa
+app.delete('/tasks/:id', (req, res) => {
+  const tasks = readTasks();
+  const updatedTasks = tasks.filter(task => task.id != req.params.id);
+  writeTasks(updatedTasks);
+  res.status(200).json({ message: 'Tarefa excluída com sucesso' });
+});
 
 app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
