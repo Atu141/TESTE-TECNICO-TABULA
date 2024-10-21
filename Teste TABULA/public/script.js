@@ -25,11 +25,11 @@ function addTask(e) {
     };
 
     addTaskToStorage(task);
-    addTaskToDOM(task);
+    addTaskToDOM(task, true); // Adiciona a nova tarefa no topo
     taskForm.reset();
 }
 
-function addTaskToDOM(task) {
+function addTaskToDOM(task, isNew = false) {
     const li = document.createElement('li');
     li.className = 'list-group-item';
     li.innerHTML = `
@@ -44,7 +44,12 @@ function addTaskToDOM(task) {
     if (task.concluida) {
         li.classList.add('list-group-item-success');
     }
-    taskList.appendChild(li);
+    
+    if (isNew) {
+        taskList.prepend(li); // Adiciona a nova tarefa no topo
+    } else {
+        taskList.appendChild(li); // Para tarefas carregadas inicialmente
+    }
 }
 
 function toggleConcluded(id) {
@@ -84,9 +89,7 @@ function searchTasks() {
 
 function renderTasks(tasks) {
     // Ordena as tarefas: não concluídas primeiro
-    tasks.sort((a, b) => {
-        return a.concluida - b.concluida; // a.concluida é false (0) e b.concluida é true (1)
-    });
+    tasks.sort((a, b) => a.concluida - b.concluida);
 
     taskList.innerHTML = '';
     tasks.forEach(task => addTaskToDOM(task));

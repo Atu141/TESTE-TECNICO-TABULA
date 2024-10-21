@@ -1,14 +1,27 @@
 body {
-    background-image: url('./tabula-icon.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    height: 100vh;
+    background-color: #f0f0f0; /* Fundo cinza claro */
     margin: 0;
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
     color: gray;
+}
+
+.container {
+    text-align: center; /* Centraliza o texto dentro do container */
+}
+
+#task-form {
+    background-color: white; /* Fundo branco para o formulário */
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+img {
+    width: 100px; /* Ajuste o tamanho da imagem conforme necessário */
+    margin-bottom: 20px; /* Espaçamento abaixo da imagem */
 }
 
 table {
