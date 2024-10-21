@@ -60,4 +60,6 @@ Passo 6: Encerrar o Servidor
 
 
 
+# Linha de Pensamento
 
+Houve várias tentativas de atualização no código, focando na implementação de funcionalidades e na resolução de problemas nas configurações iniciais. Essas melhorias visam tornar a aplicação mais robusta e intuitiva. O processo incluiu ajustes nas interações e na persistência de dados. Cada iteração contribuiu para um produto final mais eficiente e fácil de usar.
