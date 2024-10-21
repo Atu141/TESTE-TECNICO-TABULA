@@ -32,7 +32,7 @@ Passo 2: Clonar o Repositório
 
   2. Navegar até o Diretório Desejado Use o comando cd para ir até o diretório onde você deseja clonar o repositório.
 
-git clone https://github.com/Atu-141/TESTE-TECNICO-TABULA.git
+git clone [https://github.com/Atu-141/TESTE-TECNICO-TABULA.git](https://github.com/Atu141/TESTE-TECNICO-TABULA)
 
   3. Entrar no Diretório do Projeto
 cd Teste TABULA
