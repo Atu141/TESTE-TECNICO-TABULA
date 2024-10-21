@@ -1,140 +1,101 @@
-document.addEventListener('DOMContentLoaded', function () {
-  // Função para buscar e renderizar as tarefas
-  const fetchTasks = () => {
-      fetch('/tasks')
-          .then(response => response.json())
-          .then(tasks => renderTasks(tasks))
-          .catch(error => console.error('Erro ao buscar tarefas:', error));
-  };
+document.addEventListener('DOMContentLoaded', loadTasks);
 
-  // Função para renderizar tarefas no DOM
-  const renderTasks = (tasks) => {
-      const taskList = document.querySelector('#taskList');
-      taskList.innerHTML = '';
+const taskForm = document.getElementById('task-form');
+const taskList = document.getElementById('task-list');
+const searchInput = document.getElementById('search');
 
-      // Ordenar as tarefas (pendentes primeiro)
-      tasks.sort((a, b) => a.completed - b.completed);
+taskForm.addEventListener('submit', addTask);
+searchInput.addEventListener('input', searchTasks);
 
-      tasks.forEach((task, index) => {
-          const taskRow = `
-              <tr>
-                  <td>${index + 1}</td>
-                  <td>${task.title}</td>
-                  <td>${task.description}</td>
-                  <td>${task.date}</td>
-                  <td>${task.completed ? 'Concluída' : 'Pendente'}</td>
-                  <td>
-                      <button class="btn btn-success btn-sm" onclick="toggleComplete(${task.id})">${task.completed ? 'Desmarcar' : 'Concluir'}</button>
-                      <button class="btn btn-warning btn-sm" onclick="editTask(${task.id})">Editar</button>
-                      <button class="btn btn-danger btn-sm" onclick="deleteTask(${task.id})">Excluir</button>
-                  </td>
-              </tr>
-          `;
-          taskList.insertAdjacentHTML('beforeend', taskRow);
-      });
-  };
+function loadTasks() {
+    const tasks = getTasksFromStorage();
+    tasks.forEach(task => {
+        addTaskToDOM(task);
+    });
+}
 
-  // Função para adicionar tarefa
-  document.querySelector('#addTaskForm').addEventListener('submit', function (event) {
-      event.preventDefault();
+function addTask(e) {
+    e.preventDefault();
+    const titulo = document.getElementById('titulo').value;
+    const descricao = document.getElementById('descricao').value;
 
-      const newTask = {
-          title: document.querySelector('#nome').value,
-          description: document.querySelector('#descricao').value,
-          date: document.querySelector('#data').value,
-          completed: false
-      };
+    const task = {
+        id: Date.now(),
+        titulo,
+        descricao,
+        concluida: false
+    };
 
-      fetch('/tasks', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json'
-          },
-          body: JSON.stringify([newTask]) // Backend espera um array
-      })
-      .then(response => {
-          if (response.ok) {
-              alert('Tarefa adicionada com sucesso!');
-              fetchTasks();
-          } else {
-              alert('Erro ao adicionar tarefa');
-          }
-      })
-      .catch(error => console.error('Erro ao salvar tarefa:', error));
-  });
+    addTaskToStorage(task);
+    addTaskToDOM(task);
+    taskForm.reset();
+}
 
-  // Função para deletar tarefa
-  const deleteTask = (id) => {
-      fetch(`/tasks/${id}`, {
-          method: 'DELETE'
-      })
-      .then(response => {
-          if (response.ok) {
-              fetchTasks();
-          } else {
-              alert('Erro ao deletar tarefa');
-          }
-      })
-      .catch(error => console.error('Erro ao excluir tarefa:', error));
-  };
+function addTaskToDOM(task) {
+    const li = document.createElement('li');
+    li.className = 'list-group-item';
+    li.innerHTML = `
+        <strong>${task.titulo}</strong>
+        <p>${task.descricao}</p>
+        <button class="btn btn-success btn-sm" onclick="toggleConcluded(${task.id})">
+            ${task.concluida ? 'Desmarcar' : 'Concluir'}
+        </button>
+        <button class="btn btn-warning btn-sm" onclick="editTask(${task.id})">Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteTask(${task.id})">Deletar</button>
+    `;
+    if (task.concluida) {
+        li.classList.add('list-group-item-success');
+    }
+    taskList.appendChild(li);
+}
 
-  // Função para editar tarefa
-  const editTask = (id) => {
-      const newTitle = prompt('Novo título da tarefa:');
-      const newDescription = prompt('Nova descrição da tarefa:');
-      const newDate = prompt('Nova data da tarefa (YYYY-MM-DD):');
+function toggleConcluded(id) {
+    let tasks = getTasksFromStorage();
+    tasks = tasks.map(task => {
+        if (task.id === id) {
+            task.concluida = !task.concluida;
+        }
+        return task;
+    });
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+    renderTasks(tasks);
+}
 
-      fetch(`/tasks/${id}`, {
-          method: 'PUT',
-          headers: {
-              'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ title: newTitle, description: newDescription, date: newDate })
-      })
-      .then(response => {
-          if (response.ok) {
-              fetchTasks();
-          } else {
-              alert('Erro ao editar tarefa');
-          }
-      })
-      .catch(error => console.error('Erro ao editar tarefa:', error));
-  };
+function editTask(id) {
+    let tasks = getTasksFromStorage();
+    const task = tasks.find(task => task.id === id);
+    document.getElementById('titulo').value = task.titulo;
+    document.getElementById('descricao').value = task.descricao;
 
-  // Função para marcar como concluído ou desmarcar
-  const toggleComplete = (id) => {
-      fetch(`/tasks/${id}`)
-          .then(response => response.json())
-          .then(task => {
-              task.completed = !task.completed;
-              return fetch(`/tasks/${id}`, {
-                  method: 'PUT',
-                  headers: {
-                      'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify(task)
-              });
-          })
-          .then(response => {
-              if (response.ok) {
-                  fetchTasks();
-              }
-          })
-          .catch(error => console.error('Erro ao atualizar status da tarefa:', error));
-  };
+    deleteTask(id); // Remove the task so we can re-add it after editing
+}
 
-  // Função de busca
-  document.querySelector('#searchTaskInput').addEventListener('input', function () {
-      const searchTerm = this.value.toLowerCase();
-      fetch('/tasks')
-          .then(response => response.json())
-          .then(tasks => {
-              const filteredTasks = tasks.filter(task => task.title.toLowerCase().includes(searchTerm));
-              renderTasks(filteredTasks);
-          })
-          .catch(error => console.error('Erro ao buscar tarefas:', error));
-  });
+function deleteTask(id) {
+    let tasks = getTasksFromStorage();
+    tasks = tasks.filter(task => task.id !== id);
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+    renderTasks(tasks);
+}
 
-  // Inicializar com as tarefas
-  fetchTasks();
-});
+function searchTasks() {
+    const query = searchInput.value.toLowerCase();
+    const tasks = getTasksFromStorage();
+    const filteredTasks = tasks.filter(task => task.titulo.toLowerCase().includes(query));
+    renderTasks(filteredTasks);
+}
+
+function renderTasks(tasks) {
+    taskList.innerHTML = '';
+    tasks.forEach(task => addTaskToDOM(task));
+}
+
+function addTaskToStorage(task) {
+    const tasks = getTasksFromStorage();
+    tasks.push(task);
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+}
+
+function getTasksFromStorage() {
+    const tasks = localStorage.getItem('tasks');
+    return tasks ? JSON.parse(tasks) : [];
+}
