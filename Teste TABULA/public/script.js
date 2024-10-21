@@ -9,9 +9,7 @@ searchInput.addEventListener('input', searchTasks);
 
 function loadTasks() {
     const tasks = getTasksFromStorage();
-    tasks.forEach(task => {
-        addTaskToDOM(task);
-    });
+    renderTasks(tasks);
 }
 
 function addTask(e) {
@@ -85,6 +83,11 @@ function searchTasks() {
 }
 
 function renderTasks(tasks) {
+    // Ordena as tarefas: não concluídas primeiro
+    tasks.sort((a, b) => {
+        return a.concluida - b.concluida; // a.concluida é false (0) e b.concluida é true (1)
+    });
+
     taskList.innerHTML = '';
     tasks.forEach(task => addTaskToDOM(task));
 }
