@@ -1,12 +1,21 @@
 body {
-    background-color: #f7f7f7;
+    background-image: url('./tabula-icon.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: gray;
 }
 
-table th, table td {
-    vertical-align: middle;
+table {
+    margin-top: 20px;
 }
 
-.modal-header {
-    background-color: #007bff;
-    color: white;
+input#searchTaskInput {
+    margin-top: 10px;
+    width: 100%;
 }
